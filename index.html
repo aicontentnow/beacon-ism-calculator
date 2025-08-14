@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beacon ISM - Capacity Calculator | Harmonic</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #000;
+            min-height: 100vh;
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        /* Purple Gradient Background with cyan/pink accents */
+        .background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(236, 72, 153, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 60%, rgba(0, 255, 255, 0.1) 0%, transparent 50%),
+                linear-gradient(180deg, #000 0%, #0a0015 50%, #1a0033 100%);
+            z-index: -3;
+        }
+
+        /* Purple light beams with cyan/pink highlights */
+        .light-beams {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                linear-gradient(105deg, transparent 40%, rgba(0, 255, 255, 0.08) 45%, rgba(147, 51, 234, 0.1) 50%, transparent 60%),
+                linear-gradient(75deg, transparent 35%, rgba(236, 72, 153, 0.06) 40%, rgba(168, 85, 247, 0.08) 45%, transparent 55%);
+            z-index: -2;
+            animation: beamMove 15s ease-in-out infinite;
+        }
+
+        @keyframes beamMove {
+            0%, 100% { opacity: 0.5; transform: translateX(0); }
+            50% { opacity: 1; transform: translateX(20px); }
+        }
+
+        /* Floating particles with mixed colors */
+        .particle {
+            position: fixed;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .particle:nth-child(1) {
+            width: 3px; height: 3px;
+            top: 20%; left: 10%;
+            background: radial-gradient(circle, rgba(0, 255, 255, 0.8) 0%, transparent 70%);
+            animation: float 20s infinite ease-in-out;
+        }
+
+        .particle:nth-child(2) {
+            width: 5px; height: 5px;
+            top: 60%; left: 85%;
+            background: radial-gradient(circle, rgba(236, 72, 153, 0.8) 0%, transparent 70%);
+            animation: float 25s infinite ease-in-out reverse;
+        }
+
+        .particle:nth-child(3) {
+            width: 4px; height: 4px;
+            top: 80%; left: 50%;
+            background: radial-gradient(circle, rgba(168, 85, 247, 0.8) 0%, transparent 70%);
+            animation: float 18s infinite ease-in-out;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) translateX(0); opacity: 0.3; }
+            25% { transform: translateY(-30px) translateX(20px); opacity: 0.8; }
+            50% { transform: translateY(20px) translateX(-20px); opacity: 0.3; }
+            75% { transform: translateY(-20px) translateX(-30px); opacity: 0.8; }
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 60px;
+            animation: fadeInDown 1s ease-out;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo {
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 52px;
+            font-weight: 300;
+            line-height: 1.2;
+            margin-bottom: 20px;
+            color: #fff;
+        }
+
+        .header .subtitle {
+            font-size: 20px;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 300;
+            line-height: 1.5;
+        }
+
+        /* Calculator Card with glass effect */
+        .calculator-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(168, 85, 247, 0.2);
+            border-radius: 25px;
+            padding: 45px;
+            margin-bottom: 40px;
+            animation: fadeInUp 1s ease-out 0.3s both;
+            box-shadow: 0 20px 40px rgba(147, 51, 234, 0.1);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Input Groups */
+        .input-group {
+            margin-bottom: 40px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 15px;
+            color: #00ffff;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 600;
+        }
+
+        .slider-container {
+            position: relative;
+            padding: 10px 0;
+        }
+
+        .slider {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+            -webkit-appearance: none;
+            border-radius: 3px;
+            position: relative;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 26px;
+            height: 26px;
+            background: #ec4899;
+            cursor: pointer;
+            border-radius: 50%;
+            box-shadow: 0 0 20px rgba(236, 72, 153, 0.6);
+            transition: all 0.3s ease;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 30px rgba(236, 72, 153, 0.8);
+        }
+
+        .slider::-moz-range-thumb {
+            width: 26px;
+            height: 26px;
+            background: #ec4899;
+            cursor: pointer;
+            border-radius: 50%;
+            box-shadow: 0 0 20px rgba(236, 72, 153, 0.6);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .value-display {
+            position: absolute;
+            top: -40px;
+            right: 0;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            padding: 10px 18px;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            color: #00ffff;
+            min-width: 90px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+
+        /* Results Section */
+        .results {
+            background: rgba(168, 85, 247, 0.05);
+            border: 1px solid rgba(168, 85, 247, 0.2);
+            border-radius: 25px;
+            padding: 45px;
+            animation: fadeInUp 1s ease-out 0.6s both;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 20px 40px rgba(147, 51, 234, 0.1);
+        }
+
+        .results h2 {
+            font-size: 36px;
+            margin-bottom: 35px;
+            font-weight: 300;
+            color: #fff;
+        }
+
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin-bottom: 35px;
+        }
+
+        .metric-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(168, 85, 247, 0.15);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: rgba(168, 85, 247, 0.3);
+        }
+
+        .metric-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(168, 85, 247, 0.4);
+            box-shadow: 0 15px 35px rgba(168, 85, 247, 0.15);
+            background: rgba(168, 85, 247, 0.05);
+        }
+
+        .metric-value {
+            font-size: 42px;
+            font-weight: 600;
+            color: #00ffff;
+            margin-bottom: 10px;
+        }
+
+        .metric-label {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+        }
+
+        /* Highlight Box */
+        .highlight-box {
+            background: rgba(168, 85, 247, 0.08);
+            border: 2px solid rgba(168, 85, 247, 0.3);
+            border-radius: 20px;
+            padding: 35px;
+            text-align: center;
+            margin-top: 35px;
+        }
+
+        .highlight-value {
+            font-size: 54px;
+            font-weight: bold;
+            color: #00ffff;
+            margin-bottom: 10px;
+        }
+
+        .highlight-label {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 300;
+        }
+
+        /* Disclaimer */
+        .disclaimer {
+            background: rgba(255, 255, 255, 0.03);
+            border-left: 3px solid rgba(168, 85, 247, 0.5);
+            padding: 20px;
+            margin: 30px 0;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1.7;
+            border-radius: 5px;
+        }
+
+        /* CTA Section */
+        .cta-section {
+            text-align: center;
+            margin-top: 60px;
+            animation: fadeInUp 1s ease-out 0.9s both;
+        }
+
+        .cta-button {
+            display: block;
+            background: #ec4899;
+            color: #fff;
+            padding: 18px 50px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 50px;
+            text-decoration: none;
+            margin: 10px auto;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(236, 72, 153, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            border: none;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(236, 72, 153, 0.4);
+            background: #d63384;
+        }
+
+        .cta-button.secondary {
+            background: #a855f7;
+            color: #fff;
+            box-shadow: 0 10px 30px rgba(168, 85, 247, 0.3);
+            padding: 14px 35px;
+            font-size: 14px;
+        }
+
+        .cta-button.secondary:hover {
+            background: #9333ea;
+            box-shadow: 0 15px 40px rgba(168, 85, 247, 0.4);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 38px;
+            }
+            
+            .calculator-card, .results {
+                padding: 30px 20px;
+            }
+            
+            .metric-value {
+                font-size: 32px;
+            }
+            
+            .highlight-value {
+                font-size: 42px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated Background Elements -->
+    <div class="background"></div>
+    <div class="light-beams"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+
+    <div class="container">
+        <div class="header">
+            <div class="logo" style="margin-bottom: 40px;">
+                <svg width="180" height="35" viewBox="0 0 180 35" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Harmonic text logo -->
+                    <text x="0" y="25" font-family="Arial, sans-serif" font-size="28" font-weight="300" fill="#ffffff" letter-spacing="1">harmonic</text>
+                    <!-- Cyan dot (play button) -->
+                    <circle cx="155" cy="14" r="5" fill="#00ffff"/>
+                </svg>
+            </div>
+            <h1>Unlock Your Network's Hidden Capacity</h1>
+            <div class="subtitle">
+                Maximize speeds and enhance subscriber QoE with<br>
+                AI-driven DOCSIS optimization
+            </div>
+        </div>
+
+        <div class="calculator-card">
+            <div class="input-group">
+                <label>Number of DOCSIS Nodes</label>
+                <div class="slider-container">
+                    <input type="range" class="slider" id="nodes" min="10" max="500" value="100" step="10">
+                    <span class="value-display" id="nodesValue">100</span>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label>Current Network Utilization</label>
+                <div class="slider-container">
+                    <input type="range" class="slider" id="utilization" min="50" max="95" value="75" step="5">
+                    <span class="value-display" id="utilizationValue">75%</span>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label>Annual Capacity Demand Growth</label>
+                <div class="slider-container">
+                    <input type="range" class="slider" id="growth" min="10" max="50" value="30" step="5">
+                    <span class="value-display" id="growthValue">30%</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="results">
+            <h2>Your Optimization Potential</h2>
+            
+            <div class="metric-grid">
+                <div class="metric-card">
+                    <div class="metric-value" id="capacityGain">24%</div>
+                    <div class="metric-label">Additional Capacity</div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-value" id="infrastructureAvoided">$1.5M</div>
+                    <div class="metric-label">Infrastructure Avoided</div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-value" id="timeToValue">Same Day</div>
+                    <div class="metric-label">Time to Value</div>
+                </div>
+            </div>
+
+            <div class="highlight-box">
+                <div class="highlight-value" id="savingsRange">$500K - $2M</div>
+                <div class="highlight-label">Typical Annual Savings Range*</div>
+            </div>
+
+            <div class="disclaimer">
+                <strong>*Based on Production Deployments:</strong> These estimates reflect average results from operators currently using Beacon ISM in production. Actual results vary based on network conditions, plant quality, and current optimization levels. The 20% capacity gain represents the industry average from verified deployments. Contact us for a personalized assessment based on your specific network characteristics.
+            </div>
+        </div>
+
+        <div class="cta-section">
+            <button class="cta-button" onclick="scheduleAssessment()">
+                Get Personalized Assessment
+            </button>
+            <button class="cta-button secondary" onclick="learnMore()">
+                Learn More
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Function to format currency
+        function formatCurrency(num) {
+            if (num >= 1000000) {
+                return '$' + (num / 1000000).toFixed(1) + 'M';
+            } else if (num >= 1000) {
+                return '$' + Math.round(num / 1000) + 'K';
+            } else {
+                return '$' + num;
+            }
+        }
+
+        // Main calculation function
+        function updateCalculations() {
+            // Get current slider values
+            const nodes = parseInt(document.getElementById('nodes').value);
+            const utilization = parseInt(document.getElementById('utilization').value);
+            const growth = parseInt(document.getElementById('growth').value);
+            
+            // Update the display values next to sliders
+            document.getElementById('nodesValue').textContent = nodes.toString();
+            document.getElementById('utilizationValue').textContent = utilization + '%';
+            document.getElementById('growthValue').textContent = growth + '%';
+            
+            // Calculate Additional Capacity based on utilization
+            // Based on real customer data from Inter-Mountain, Beam, and Thacker-Grigsby
+            let capacityGain;
+            if (utilization >= 90) {
+                capacityGain = 27; // Peak performance at high utilization
+            } else if (utilization >= 80) {
+                capacityGain = 24; // Inter-Mountain average
+            } else if (utilization >= 70) {
+                capacityGain = 20; // Industry average
+            } else {
+                capacityGain = 15; // Conservative estimate for lower utilization
+            }
+            
+            // Calculate Infrastructure Avoided
+            // Based on documented $15K per node split cost
+            const utilizationFactor = (utilization - 50) / 45; // Normalize 50-95% to 0-1
+            const growthFactor = growth / 100;
+            const nodesNeedingSplits = Math.round(nodes * utilizationFactor * growthFactor * 0.15);
+            const nodeSplitCost = 15000; // $15K per node split from documentation
+            const infrastructureAvoided = nodesNeedingSplits * nodeSplitCost;
+            
+            // Calculate operational savings
+            // Based on documented savings: $12K-$24K annually per region for truck rolls
+            const truckRollSavingsPerNode = 200; // Conservative estimate
+            const supportSavingsPerNode = 150; // Support cost reduction
+            const operationalSavings = nodes * (truckRollSavingsPerNode + supportSavingsPerNode);
+            
+            // Calculate total savings range
+            const minSavings = (infrastructureAvoided * 0.5) + (operationalSavings * 0.8);
+            const maxSavings = infrastructureAvoided + (operationalSavings * 1.5);
+            
+            // Update all the display values
+            document.getElementById('capacityGain').textContent = capacityGain + '%';
+            document.getElementById('infrastructureAvoided').textContent = formatCurrency(infrastructureAvoided);
+            document.getElementById('savingsRange').textContent = formatCurrency(minSavings) + ' - ' + formatCurrency(maxSavings);
+            
+            // Update slider visual fill
+            updateSliderFill('nodes');
+            updateSliderFill('utilization');
+            updateSliderFill('growth');
+        }
+
+        // Function to update slider gradient fill
+        function updateSliderFill(sliderId) {
+            const slider = document.getElementById(sliderId);
+            const percent = ((slider.value - slider.min) / (slider.max - slider.min)) * 100;
+            slider.style.background = `linear-gradient(to right, #ec4899 0%, #ec4899 ${percent}%, rgba(255, 255, 255, 0.1) ${percent}%, rgba(255, 255, 255, 0.1) 100%)`;
+        }
+
+        // Button functions
+        function scheduleAssessment() {
+            alert('Contact Harmonic for a personalized Beacon ISM assessment tailored to your network.');
+            window.open('https://www.harmonicinc.com/broadband/beacon/', '_blank');
+        }
+        
+        function learnMore() {
+            window.open('https://www.harmonicinc.com/broadband/beacon/', '_blank');
+        }
+
+        // Initialize when page loads
+        window.addEventListener('DOMContentLoaded', function() {
+            // Attach event listeners to sliders
+            document.getElementById('nodes').addEventListener('input', updateCalculations);
+            document.getElementById('utilization').addEventListener('input', updateCalculations);
+            document.getElementById('growth').addEventListener('input', updateCalculations);
+            
+            // Run initial calculation
+            updateCalculations();
+        });
+    </script>
+</body>
+</html>
