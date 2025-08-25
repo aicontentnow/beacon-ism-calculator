@@ -418,8 +418,8 @@
             </div>
             <h1>Unlock Your Network's Hidden Capacity</h1>
             <div class="subtitle">
-                Maximize speeds and enhance subscriber QoE with<br>
-                AI-driven DOCSIS optimization
+                Get maximum value, speeds and QoE from your network<br>
+                With Harmonic's AI-powered Beacon ISM
             </div>
         </div>
 
@@ -459,8 +459,8 @@
                 </div>
                 
                 <div class="metric-card">
-                    <div class="metric-value" id="infrastructureAvoided">$1.5M</div>
-                    <div class="metric-label">Infrastructure Avoided</div>
+                    <div class="metric-value" id="infrastructureSavings">$1.5M</div>
+                    <div class="metric-label">Infrastructure Savings</div>
                 </div>
                 
                 <div class="metric-card">
@@ -475,7 +475,7 @@
             </div>
 
             <div class="disclaimer">
-                <strong>*Based on Production Deployments:</strong> These estimates reflect average results from operators currently using Beacon ISM in production. Actual results vary based on network conditions, plant quality, and current optimization levels. The 20% capacity gain represents the industry average from verified deployments. Contact us for a personalized assessment based on your specific network characteristics.
+                <strong>*Based on Production Deployments:</strong> These estimates reflect average results from operators currently using Harmonic's Beacon ISM in production. Actual results vary based on network conditions, plant quality, and current optimization levels. Capacity gains represent the industry average from verified deployments. Contact us for a personalized assessment based on your specific network characteristics.
             </div>
         </div>
 
@@ -526,13 +526,13 @@
                 capacityGain = 15; // Conservative estimate for lower utilization
             }
             
-            // Calculate Infrastructure Avoided
+            // Calculate Infrastructure Savings (formerly Infrastructure Avoided)
             // Based on documented $15K per node split cost
             const utilizationFactor = (utilization - 50) / 45; // Normalize 50-95% to 0-1
             const growthFactor = growth / 100;
             const nodesNeedingSplits = Math.round(nodes * utilizationFactor * growthFactor * 0.15);
             const nodeSplitCost = 15000; // $15K per node split from documentation
-            const infrastructureAvoided = nodesNeedingSplits * nodeSplitCost;
+            const infrastructureSavings = nodesNeedingSplits * nodeSplitCost;
             
             // Calculate operational savings
             // Based on documented savings: $12K-$24K annually per region for truck rolls
@@ -541,12 +541,12 @@
             const operationalSavings = nodes * (truckRollSavingsPerNode + supportSavingsPerNode);
             
             // Calculate total savings range
-            const minSavings = (infrastructureAvoided * 0.5) + (operationalSavings * 0.8);
-            const maxSavings = infrastructureAvoided + (operationalSavings * 1.5);
+            const minSavings = (infrastructureSavings * 0.5) + (operationalSavings * 0.8);
+            const maxSavings = infrastructureSavings + (operationalSavings * 1.5);
             
             // Update all the display values
             document.getElementById('capacityGain').textContent = capacityGain + '%';
-            document.getElementById('infrastructureAvoided').textContent = formatCurrency(infrastructureAvoided);
+            document.getElementById('infrastructureSavings').textContent = formatCurrency(infrastructureSavings);
             document.getElementById('savingsRange').textContent = formatCurrency(minSavings) + ' - ' + formatCurrency(maxSavings);
             
             // Update slider visual fill
