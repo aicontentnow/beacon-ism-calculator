@@ -177,6 +177,16 @@
             display: inline-block;
             position: relative;
         }
+        
+        .nodes-hint {
+            display: block;
+            margin-top: 10px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+            text-transform: none;
+            letter-spacing: 0.3px;
+            font-weight: 400;
+        }
 
         .nodes-input {
             background: rgba(0, 0, 0, 0.5);
@@ -190,7 +200,7 @@
             text-align: center;
             backdrop-filter: blur(10px);
             outline: none;
-            transition: all 0.3s ease;
+            transition: border-color 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
             cursor: text;
             -webkit-user-select: text;
             -moz-user-select: text;
@@ -244,6 +254,30 @@
             position: relative;
             padding: 10px 0;
         }
+        
+        .slider-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 5px;
+            padding: 0 3px;
+        }
+        
+        .min-label, .max-label {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.6);
+            font-weight: 400;
+        }
+        
+        .range-hint {
+            display: block;
+            margin-top: 10px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+            text-transform: none;
+            letter-spacing: 0.3px;
+            font-weight: 400;
+            text-align: center;
+        }
 
         .slider {
             width: 100%;
@@ -295,11 +329,11 @@
             font-size: 18px;
             font-weight: 600;
             color: #00ffff;
-            min-width: 90px;
+            min-width: 100px;
             text-align: center;
             backdrop-filter: blur(10px);
             outline: none;
-            transition: all 0.3s ease;
+            transition: border-color 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
             cursor: text;
             -webkit-user-select: text;
             -moz-user-select: text;
@@ -497,6 +531,10 @@
             .highlight-value {
                 font-size: 42px;
             }
+            
+            .range-hint {
+                font-size: 11px;
+            }
         }
     </style>
 </head>
@@ -526,8 +564,9 @@
             <div class="nodes-input-section">
                 <label>Enter Number of DOCSIS Nodes</label>
                 <div class="nodes-input-wrapper">
-                    <input type="number" class="nodes-input" id="nodesValue" value="100" min="1" placeholder="Enter nodes">
+                    <input type="number" class="nodes-input" id="nodesValue" value="100" min="1">
                 </div>
+                <span class="nodes-hint">Any positive number</span>
             </div>
 
             <!-- Slider Inputs -->
@@ -535,16 +574,26 @@
                 <label>Current Network Utilization</label>
                 <div class="slider-container">
                     <input type="range" class="slider" id="utilization" min="50" max="95" value="75" step="1">
-                    <input type="number" class="value-input" id="utilizationValue" value="75" min="50" max="95" placeholder="50-95">
+                    <input type="number" class="value-input" id="utilizationValue" value="75" min="50" max="95">
+                    <div class="slider-labels">
+                        <span class="min-label">50%</span>
+                        <span class="max-label">95%</span>
+                    </div>
                 </div>
+                <span class="range-hint">Valid: 50-95% (typical DOCSIS operating range)</span>
             </div>
 
             <div class="input-group">
                 <label>Annual Capacity Demand Growth</label>
                 <div class="slider-container">
                     <input type="range" class="slider" id="growth" min="10" max="50" value="30" step="1">
-                    <input type="number" class="value-input" id="growthValue" value="30" min="10" max="50" placeholder="10-50">
+                    <input type="number" class="value-input" id="growthValue" value="30" min="10" max="50">
+                    <div class="slider-labels">
+                        <span class="min-label">10%</span>
+                        <span class="max-label">50%</span>
+                    </div>
                 </div>
+                <span class="range-hint">Valid: 10-50% (industry standard growth rates)</span>
             </div>
         </div>
 
@@ -675,7 +724,7 @@
                 percentDisplay.style.cssText = `
                     position: absolute;
                     top: -40px;
-                    right: 12px;
+                    right: 10px;
                     color: #00ffff;
                     font-size: 18px;
                     font-weight: 600;
@@ -684,12 +733,13 @@
                 `;
                 percentDisplay.textContent = '%';
                 input.parentElement.appendChild(percentDisplay);
-                input.style.paddingRight = '32px';
+                input.style.paddingRight = '28px';
             }
             
             // Update input field when slider changes
             slider.addEventListener('input', function() {
                 input.value = slider.value;
+                input.style.borderColor = 'rgba(0, 255, 255, 0.3)'; // Reset border color
                 updateCalculations();
             });
             
@@ -697,8 +747,11 @@
             input.addEventListener('input', function() {
                 let value = this.value;
                 
-                // Allow empty or partial input while typing
-                if (value === '' || value === '-') return;
+                // Allow empty while typing
+                if (value === '') {
+                    this.style.borderColor = 'rgba(0, 255, 255, 0.3)';
+                    return;
+                }
                 
                 value = parseInt(value);
                 
@@ -707,18 +760,14 @@
                     const min = parseInt(slider.min);
                     const max = parseInt(slider.max);
                     
-                    // Update slider if within range
+                    // Update slider and calculations if value is within valid range
                     if (value >= min && value <= max) {
                         slider.value = value;
+                        this.style.borderColor = 'rgba(0, 255, 255, 0.3)'; // Valid - normal border
                         updateCalculations();
-                    } else if (value < min) {
-                        // Allow typing lower values temporarily
-                        // (e.g., typing "1" before "10")
-                    } else if (value > max) {
-                        // Clamp to max and update immediately
-                        this.value = max;
-                        slider.value = max;
-                        updateCalculations();
+                    } else {
+                        // Visual feedback for out-of-range values
+                        this.style.borderColor = 'rgba(236, 72, 153, 0.5)'; // Pink border for invalid
                     }
                 }
             });
@@ -727,27 +776,70 @@
             input.addEventListener('blur', function() {
                 let value = parseInt(this.value);
                 
-                if (isNaN(value) || value === '') {
-                    // Reset to slider value if invalid
-                    value = slider.value;
+                if (isNaN(value) || this.value === '') {
+                    // Reset to slider value if invalid or empty
+                    value = parseInt(slider.value);
                 } else {
-                    // Clamp value to min/max range
+                    // Clamp value to min/max range with notification
                     const min = parseInt(slider.min);
                     const max = parseInt(slider.max);
-                    value = Math.max(min, Math.min(max, value));
+                    
+                    if (value < min) {
+                        value = min;
+                        // Brief flash to show it was adjusted
+                        this.style.backgroundColor = 'rgba(236, 72, 153, 0.1)';
+                        setTimeout(() => {
+                            this.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+                        }, 300);
+                    } else if (value > max) {
+                        value = max;
+                        // Brief flash to show it was adjusted
+                        this.style.backgroundColor = 'rgba(236, 72, 153, 0.1)';
+                        setTimeout(() => {
+                            this.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+                        }, 300);
+                    }
                 }
                 
-                // Update both slider and input
+                // Update both slider and input with clamped value
                 slider.value = value;
                 this.value = value;
+                this.style.borderColor = 'rgba(0, 255, 255, 0.3)'; // Reset border
                 
                 updateCalculations();
             });
             
-            // Handle Enter key
+            // Handle Enter key - same as blur
             input.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
                     e.preventDefault();
+                    let value = parseInt(this.value);
+                    
+                    if (isNaN(value) || this.value === '') {
+                        value = parseInt(slider.value);
+                    } else {
+                        const min = parseInt(slider.min);
+                        const max = parseInt(slider.max);
+                        
+                        if (value < min) {
+                            value = min;
+                            this.style.backgroundColor = 'rgba(236, 72, 153, 0.1)';
+                            setTimeout(() => {
+                                this.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+                            }, 300);
+                        } else if (value > max) {
+                            value = max;
+                            this.style.backgroundColor = 'rgba(236, 72, 153, 0.1)';
+                            setTimeout(() => {
+                                this.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+                            }, 300);
+                        }
+                    }
+                    
+                    slider.value = value;
+                    this.value = value;
+                    this.style.borderColor = 'rgba(0, 255, 255, 0.3)';
+                    updateCalculations();
                     this.blur();
                 }
             });
