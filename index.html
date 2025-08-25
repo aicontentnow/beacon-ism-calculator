@@ -157,7 +157,66 @@
             }
         }
 
-        /* Input Groups */
+        /* Node Input Section */
+        .nodes-input-section {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .nodes-input-section label {
+            display: block;
+            margin-bottom: 15px;
+            color: #00ffff;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 600;
+        }
+
+        .nodes-input-wrapper {
+            display: inline-block;
+            position: relative;
+        }
+
+        .nodes-input {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            padding: 10px 18px;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            color: #00ffff;
+            min-width: 120px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            outline: none;
+            transition: all 0.3s ease;
+            cursor: text;
+        }
+
+        .nodes-input:hover {
+            border-color: rgba(0, 255, 255, 0.5);
+            background: rgba(0, 0, 0, 0.6);
+        }
+
+        .nodes-input:focus {
+            border-color: #00ffff;
+            background: rgba(0, 0, 0, 0.7);
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+        }
+
+        /* Remove spinner arrows from number inputs */
+        .nodes-input::-webkit-inner-spin-button,
+        .nodes-input::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .nodes-input[type=number] {
+            -moz-appearance: textfield;
+        }
+
+        /* Input Groups for sliders */
         .input-group {
             margin-bottom: 40px;
         }
@@ -216,7 +275,7 @@
             transition: all 0.3s ease;
         }
 
-        .value-display {
+        .value-input {
             position: absolute;
             top: -40px;
             right: 0;
@@ -230,6 +289,20 @@
             min-width: 90px;
             text-align: center;
             backdrop-filter: blur(10px);
+            outline: none;
+            transition: all 0.3s ease;
+            cursor: text;
+        }
+
+        .value-input:hover {
+            border-color: rgba(0, 255, 255, 0.5);
+            background: rgba(0, 0, 0, 0.6);
+        }
+
+        .value-input:focus {
+            border-color: #00ffff;
+            background: rgba(0, 0, 0, 0.7);
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
         }
 
         /* Results Section */
@@ -424,27 +497,28 @@
         </div>
 
         <div class="calculator-card">
-            <div class="input-group">
-                <label>Number of DOCSIS Nodes</label>
-                <div class="slider-container">
-                    <input type="range" class="slider" id="nodes" min="10" max="500" value="100" step="10">
-                    <span class="value-display" id="nodesValue">100</span>
+            <!-- Standalone Nodes Input -->
+            <div class="nodes-input-section">
+                <label>Enter Number of DOCSIS Nodes</label>
+                <div class="nodes-input-wrapper">
+                    <input type="number" class="nodes-input" id="nodesValue" value="100" min="1" placeholder="Enter nodes">
                 </div>
             </div>
 
+            <!-- Slider Inputs -->
             <div class="input-group">
                 <label>Current Network Utilization</label>
                 <div class="slider-container">
-                    <input type="range" class="slider" id="utilization" min="50" max="95" value="75" step="5">
-                    <span class="value-display" id="utilizationValue">75%</span>
+                    <input type="range" class="slider" id="utilization" min="50" max="95" value="75" step="1">
+                    <input type="text" class="value-input" id="utilizationValue" value="75%">
                 </div>
             </div>
 
             <div class="input-group">
                 <label>Annual Capacity Demand Growth</label>
                 <div class="slider-container">
-                    <input type="range" class="slider" id="growth" min="10" max="50" value="30" step="5">
-                    <span class="value-display" id="growthValue">30%</span>
+                    <input type="range" class="slider" id="growth" min="10" max="50" value="30" step="1">
+                    <input type="text" class="value-input" id="growthValue" value="30%">
                 </div>
             </div>
         </div>
@@ -503,15 +577,15 @@
 
         // Main calculation function
         function updateCalculations() {
-            // Get current slider values
-            const nodes = parseInt(document.getElementById('nodes').value);
+            // Get current values
+            const nodesInput = document.getElementById('nodesValue');
+            let nodes = parseInt(nodesInput.value) || 100;
+            
+            // Ensure nodes is at least 1
+            if (nodes < 1) nodes = 1;
+            
             const utilization = parseInt(document.getElementById('utilization').value);
             const growth = parseInt(document.getElementById('growth').value);
-            
-            // Update the display values next to sliders
-            document.getElementById('nodesValue').textContent = nodes.toString();
-            document.getElementById('utilizationValue').textContent = utilization + '%';
-            document.getElementById('growthValue').textContent = growth + '%';
             
             // Calculate Additional Capacity based on utilization
             // Based on real customer data from Inter-Mountain, Beam, and Thacker-Grigsby
@@ -550,7 +624,6 @@
             document.getElementById('savingsRange').textContent = formatCurrency(minSavings) + ' - ' + formatCurrency(maxSavings);
             
             // Update slider visual fill
-            updateSliderFill('nodes');
             updateSliderFill('utilization');
             updateSliderFill('growth');
         }
@@ -560,6 +633,69 @@
             const slider = document.getElementById(sliderId);
             const percent = ((slider.value - slider.min) / (slider.max - slider.min)) * 100;
             slider.style.background = `linear-gradient(to right, #ec4899 0%, #ec4899 ${percent}%, rgba(255, 255, 255, 0.1) ${percent}%, rgba(255, 255, 255, 0.1) 100%)`;
+        }
+
+        // Function to sync slider with input field
+        function syncSliderToInput(sliderId, inputId) {
+            const slider = document.getElementById(sliderId);
+            const input = document.getElementById(inputId);
+            
+            // Update input field when slider changes
+            slider.addEventListener('input', function() {
+                input.value = slider.value + '%';
+                updateCalculations();
+            });
+            
+            // Update slider when input field changes
+            input.addEventListener('input', function() {
+                let value = input.value.toString().replace('%', '').trim();
+                value = parseInt(value);
+                
+                // Validate the input
+                if (!isNaN(value)) {
+                    // Clamp value to min/max range
+                    const min = parseInt(slider.min);
+                    const max = parseInt(slider.max);
+                    value = Math.max(min, Math.min(max, value));
+                    
+                    // Update slider
+                    slider.value = value;
+                    
+                    // Update input field with validated value
+                    input.value = value + '%';
+                    
+                    updateCalculations();
+                }
+            });
+            
+            // Handle when input loses focus - ensure valid format
+            input.addEventListener('blur', function() {
+                let value = input.value.toString().replace('%', '').trim();
+                value = parseInt(value);
+                
+                if (isNaN(value)) {
+                    // Reset to slider value if invalid
+                    value = slider.value;
+                } else {
+                    // Clamp value to min/max range
+                    const min = parseInt(slider.min);
+                    const max = parseInt(slider.max);
+                    value = Math.max(min, Math.min(max, value));
+                }
+                
+                // Update both slider and input
+                slider.value = value;
+                input.value = value + '%';
+                
+                updateCalculations();
+            });
+            
+            // Handle Enter key
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    input.blur();
+                }
+            });
         }
 
         // Button functions
@@ -574,10 +710,26 @@
 
         // Initialize when page loads
         window.addEventListener('DOMContentLoaded', function() {
-            // Attach event listeners to sliders
-            document.getElementById('nodes').addEventListener('input', updateCalculations);
-            document.getElementById('utilization').addEventListener('input', updateCalculations);
-            document.getElementById('growth').addEventListener('input', updateCalculations);
+            // Set up nodes input handler
+            const nodesInput = document.getElementById('nodesValue');
+            nodesInput.addEventListener('input', updateCalculations);
+            nodesInput.addEventListener('blur', function() {
+                // Ensure valid number on blur
+                let value = parseInt(this.value);
+                if (isNaN(value) || value < 1) {
+                    this.value = 100;
+                }
+                updateCalculations();
+            });
+            nodesInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    this.blur();
+                }
+            });
+            
+            // Set up bidirectional sync for slider inputs
+            syncSliderToInput('utilization', 'utilizationValue');
+            syncSliderToInput('growth', 'growthValue');
             
             // Run initial calculation
             updateCalculations();
