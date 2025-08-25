@@ -192,6 +192,10 @@
             outline: none;
             transition: all 0.3s ease;
             cursor: text;
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
+            user-select: text;
         }
 
         .nodes-input:hover {
@@ -214,6 +218,11 @@
 
         .nodes-input[type=number] {
             -moz-appearance: textfield;
+            /* Ensure text is selectable */
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
+            user-select: text;
         }
 
         /* Input Groups for sliders */
@@ -292,11 +301,31 @@
             outline: none;
             transition: all 0.3s ease;
             cursor: text;
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            user-select: text;
+        }
+        
+        /* Remove spinner arrows from percentage inputs */
+        .value-input::-webkit-inner-spin-button,
+        .value-input::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        
+        input[type=number].value-input {
+            -moz-appearance: textfield;
+            /* Ensure text is selectable */
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
+            user-select: text;
         }
 
         .value-input:hover {
             border-color: rgba(0, 255, 255, 0.5);
             background: rgba(0, 0, 0, 0.6);
+            box-shadow: 0 0 5px rgba(0, 255, 255, 0.2);
         }
 
         .value-input:focus {
@@ -506,7 +535,7 @@
                 <label>Current Network Utilization</label>
                 <div class="slider-container">
                     <input type="range" class="slider" id="utilization" min="50" max="95" value="75" step="1">
-                    <input type="text" class="value-input" id="utilizationValue" value="75%">
+                    <input type="number" class="value-input" id="utilizationValue" value="75" min="50" max="95" placeholder="50-95">
                 </div>
             </div>
 
@@ -514,7 +543,7 @@
                 <label>Annual Capacity Demand Growth</label>
                 <div class="slider-container">
                     <input type="range" class="slider" id="growth" min="10" max="50" value="30" step="1">
-                    <input type="text" class="value-input" id="growthValue" value="30%">
+                    <input type="number" class="value-input" id="growthValue" value="30" min="10" max="50" placeholder="10-50">
                 </div>
             </div>
         </div>
@@ -622,6 +651,10 @@
             // Update slider visual fill
             updateSliderFill('utilization');
             updateSliderFill('growth');
+            
+            // Ensure input values are in sync (without % sign since they're number inputs)
+            document.getElementById('utilizationValue').value = utilization;
+            document.getElementById('growthValue').value = growth;
         }
 
         // Function to update slider gradient fill
@@ -632,44 +665,69 @@
         }
 
         // Function to sync slider with input field
-        function syncSliderToInput(sliderId, inputId) {
+        function syncSliderToInput(sliderId, inputId, isPercentage = true) {
             const slider = document.getElementById(sliderId);
             const input = document.getElementById(inputId);
             
+            // Create percentage display element
+            if (isPercentage) {
+                const percentDisplay = document.createElement('span');
+                percentDisplay.style.cssText = `
+                    position: absolute;
+                    top: -40px;
+                    right: 12px;
+                    color: #00ffff;
+                    font-size: 18px;
+                    font-weight: 600;
+                    pointer-events: none;
+                    line-height: 44px;
+                `;
+                percentDisplay.textContent = '%';
+                input.parentElement.appendChild(percentDisplay);
+                input.style.paddingRight = '32px';
+            }
+            
             // Update input field when slider changes
             slider.addEventListener('input', function() {
-                input.value = slider.value + '%';
+                input.value = slider.value;
                 updateCalculations();
             });
             
-            // Update slider when input field changes
+            // Update slider when input field changes (real-time as user types)
             input.addEventListener('input', function() {
-                let value = input.value.toString().replace('%', '').trim();
+                let value = this.value;
+                
+                // Allow empty or partial input while typing
+                if (value === '' || value === '-') return;
+                
                 value = parseInt(value);
                 
-                // Validate the input
+                // Only update if it's a valid number
                 if (!isNaN(value)) {
-                    // Clamp value to min/max range
                     const min = parseInt(slider.min);
                     const max = parseInt(slider.max);
-                    value = Math.max(min, Math.min(max, value));
                     
-                    // Update slider
-                    slider.value = value;
-                    
-                    // Update input field with validated value
-                    input.value = value + '%';
-                    
-                    updateCalculations();
+                    // Update slider if within range
+                    if (value >= min && value <= max) {
+                        slider.value = value;
+                        updateCalculations();
+                    } else if (value < min) {
+                        // Allow typing lower values temporarily
+                        // (e.g., typing "1" before "10")
+                    } else if (value > max) {
+                        // Clamp to max and update immediately
+                        this.value = max;
+                        slider.value = max;
+                        updateCalculations();
+                    }
                 }
             });
             
-            // Handle when input loses focus - ensure valid format
+            // Handle when input loses focus - enforce valid range
             input.addEventListener('blur', function() {
-                let value = input.value.toString().replace('%', '').trim();
-                value = parseInt(value);
+                let value = parseInt(this.value);
                 
-                if (isNaN(value)) {
+                if (isNaN(value) || value === '') {
                     // Reset to slider value if invalid
                     value = slider.value;
                 } else {
@@ -681,7 +739,7 @@
                 
                 // Update both slider and input
                 slider.value = value;
-                input.value = value + '%';
+                this.value = value;
                 
                 updateCalculations();
             });
@@ -689,8 +747,14 @@
             // Handle Enter key
             input.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
-                    input.blur();
+                    e.preventDefault();
+                    this.blur();
                 }
+            });
+            
+            // Select all text on focus for easy replacement
+            input.addEventListener('focus', function() {
+                this.select();
             });
         }
 
@@ -719,13 +783,18 @@
             });
             nodesInput.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
+                    e.preventDefault();
                     this.blur();
                 }
             });
+            nodesInput.addEventListener('focus', function() {
+                // Select all text on focus for easy replacement
+                this.select();
+            });
             
-            // Set up bidirectional sync for slider inputs
-            syncSliderToInput('utilization', 'utilizationValue');
-            syncSliderToInput('growth', 'growthValue');
+            // Set up bidirectional sync for slider inputs (with percentage display)
+            syncSliderToInput('utilization', 'utilizationValue', true);
+            syncSliderToInput('growth', 'growthValue', true);
             
             // Run initial calculation
             updateCalculations();
